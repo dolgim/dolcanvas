@@ -1,0 +1,26 @@
+{
+  "name": "dolcanvas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI 에이전트 활용 검증용 실시간 공유 그림판",
+  "scripts": {
+    "dev": "pnpm --parallel --stream -r dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\""
+  },
+  "keywords": [
+    "canvas",
+    "websocket",
+    "collaborative",
+    "drawing"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.54.0"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "@dolcanvas/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "dolcanvas WebSocket server",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src/**/*.ts"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.5",
+    "@types/ws": "^8.5.14",
+    "tsx": "^4.19.3"
+  }
+}
