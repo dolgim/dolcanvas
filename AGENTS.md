@@ -53,11 +53,20 @@ pnpm format
 - 유틸리티: drawingUtils (렌더링), idGenerator (ID 생성)
 - shared 패키지: 빌드 없이 TypeScript 소스 직접 사용
 
-### Phase 2: 실시간 동기화 (현재)
-- [ ] WebSocket 서버 연결
-- [ ] 그림 데이터 브로드캐스트
-- [ ] 여러 브라우저에서 동시 작업 테스트
-- [ ] 새 사용자 입장 시 기존 그림 동기화
+### Phase 2: 실시간 동기화 ✅ 완료
+- [x] WebSocket 서버 연결
+- [x] 그림 데이터 브로드캐스트
+- [x] 여러 브라우저에서 동시 작업 테스트
+- [x] 새 사용자 입장 시 기존 그림 동기화
+
+**구현 내역**:
+- 서버: Node.js 네이티브 TypeScript 실행 (tsx 제거)
+- 서버: 타입 기반 메시지 라우팅 (join, draw, clear, sync)
+- 서버: 스트로크 히스토리 관리 + 송신자 제외 broadcast
+- useWebSocket 훅: 연결 관리, 자동 재연결 (3초), 타입 안전한 메시지 전송
+- useDrawing 훅: WebSocket 연동, 원격 핸들러 (handleRemoteStroke/Clear/Sync)
+- App.tsx: useRef로 순환 의존 해결, 메시지 라우팅
+- Per-stroke 전송: mouseUp/Leave 시점에 완성된 stroke 전송
 
 ### Phase 3: 추가 기능
 - [ ] 도형 도구 (사각형, 원, 선)
@@ -99,6 +108,26 @@ pnpm format
 - `lineCap/lineJoin: 'round'`: 부드러운 선 외관
 - 임페러티브 렌더링: 성능 최적화를 위해 mousemove 중 직접 ctx 조작
 
+## Phase 2 구현 참고 (기존 코드 이해용)
+
+### 아키텍처
+- **App.tsx**: useWebSocket + useDrawing 오케스트레이션, 메시지 라우팅
+- **useWebSocket**: WebSocket 연결 관리, 자동 재연결, sendMessage 함수 제공
+- **useDrawing**: WebSocket 통합, 로컬/원격 액션 처리
+- **server/index.ts**: 타입 기반 메시지 처리, 히스토리 관리, broadcast
+
+### 핵심 구현 패턴
+- **순환 의존 해결**: App.tsx에서 `messageHandlerRef`로 useWebSocket ↔ useDrawing 연결
+- **송신자 제외**: 서버에서 broadcast시 송신자 제외 → 중복 렌더링 방지
+- **초기 동기화**: 새 클라이언트 join시 서버가 sync 메시지로 전체 strokes 전송
+- **Per-stroke 전송**: 실시간 커서 추적 없이 완성된 선만 전송 (성능 최적화)
+
+### 테스트 방법
+```bash
+pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
+```
+자세한 테스트 시나리오는 `TESTING.md` 참조.
+
 ---
 **마지막 업데이트**: 2026-02-05
-**프로젝트 상태**: Phase 1 완료, Phase 2 진행 중
+**프로젝트 상태**: Phase 2 완료, Phase 3 대기 중

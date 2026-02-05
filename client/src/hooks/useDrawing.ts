@@ -1,15 +1,26 @@
 import { useRef, useState, useCallback, RefObject } from 'react';
-import type { DrawStroke, DrawPoint } from '@dolcanvas/shared';
+import type {
+  DrawStroke,
+  DrawPoint,
+  WSMessage,
+  DrawMessagePayload,
+  ClearMessagePayload,
+} from '@dolcanvas/shared';
 import { generateStrokeId, generateUserId } from '../utils/idGenerator';
-import { drawLineSegment, redrawAllStrokes } from '../utils/drawingUtils';
+import {
+  drawLineSegment,
+  drawStroke,
+  redrawAllStrokes,
+} from '../utils/drawingUtils';
 
 const USER_ID = generateUserId();
 
 interface UseDrawingOptions {
   canvasRef: RefObject<HTMLCanvasElement>;
+  sendMessage?: <T>(message: WSMessage<T>) => void;
 }
 
-export function useDrawing({ canvasRef }: UseDrawingOptions) {
+export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
   const [strokes, setStrokes] = useState<DrawStroke[]>([]);
   const [color, setColor] = useState('#000000');
   const [width, setWidth] = useState(2);
@@ -79,22 +90,46 @@ export function useDrawing({ canvasRef }: UseDrawingOptions) {
   const handleMouseUp = useCallback(() => {
     if (!isDrawingRef.current || !currentStrokeRef.current) return;
 
+    const finishedStroke = currentStrokeRef.current;
+
     // Add finished stroke to strokes array
-    setStrokes((prev) => [...prev, currentStrokeRef.current!]);
+    setStrokes((prev) => [...prev, finishedStroke]);
+
+    // Send to server
+    if (sendMessage) {
+      const message: WSMessage<DrawMessagePayload> = {
+        type: 'draw',
+        payload: { stroke: finishedStroke },
+        timestamp: Date.now(),
+      };
+      sendMessage(message);
+    }
 
     isDrawingRef.current = false;
     currentStrokeRef.current = null;
-  }, []);
+  }, [sendMessage]);
 
   const handleMouseLeave = useCallback(() => {
     if (!isDrawingRef.current || !currentStrokeRef.current) return;
 
+    const finishedStroke = currentStrokeRef.current;
+
     // Add finished stroke to strokes array
-    setStrokes((prev) => [...prev, currentStrokeRef.current!]);
+    setStrokes((prev) => [...prev, finishedStroke]);
+
+    // Send to server
+    if (sendMessage) {
+      const message: WSMessage<DrawMessagePayload> = {
+        type: 'draw',
+        payload: { stroke: finishedStroke },
+        timestamp: Date.now(),
+      };
+      sendMessage(message);
+    }
 
     isDrawingRef.current = false;
     currentStrokeRef.current = null;
-  }, []);
+  }, [sendMessage]);
 
   const handleClear = useCallback(() => {
     const canvas = canvasRef.current;
@@ -103,12 +138,62 @@ export function useDrawing({ canvasRef }: UseDrawingOptions) {
 
     setStrokes([]);
     redrawAllStrokes(ctx, [], canvas.width, canvas.height);
+
+    // Send to server
+    if (sendMessage) {
+      const message: WSMessage<ClearMessagePayload> = {
+        type: 'clear',
+        payload: { userId: USER_ID },
+        timestamp: Date.now(),
+      };
+      sendMessage(message);
+    }
+  }, [canvasRef, sendMessage]);
+
+  // Handle remote stroke from other users
+  const handleRemoteStroke = useCallback(
+    (stroke: DrawStroke) => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (!canvas || !ctx) return;
+
+      // Add to state
+      setStrokes((prev) => [...prev, stroke]);
+
+      // Draw immediately
+      drawStroke(ctx, stroke);
+    },
+    [canvasRef],
+  );
+
+  // Handle remote clear from other users
+  const handleRemoteClear = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+
+    setStrokes([]);
+    redrawAllStrokes(ctx, [], canvas.width, canvas.height);
   }, [canvasRef]);
+
+  // Handle sync message (initial state from server)
+  const handleSync = useCallback(
+    (syncStrokes: DrawStroke[]) => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (!canvas || !ctx) return;
+
+      setStrokes(syncStrokes);
+      redrawAllStrokes(ctx, syncStrokes, canvas.width, canvas.height);
+    },
+    [canvasRef],
+  );
 
   return {
     strokes,
     color,
     width,
+    userId: USER_ID,
     setColor,
     setWidth,
     handleMouseDown,
@@ -116,5 +201,8 @@ export function useDrawing({ canvasRef }: UseDrawingOptions) {
     handleMouseUp,
     handleMouseLeave,
     handleClear,
+    handleRemoteStroke,
+    handleRemoteClear,
+    handleSync,
   };
 }

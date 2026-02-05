@@ -72,6 +72,9 @@ importers:
 
   server:
     dependencies:
+      '@dolcanvas/shared':
+        specifier: workspace:*
+        version: link:../shared
       ws:
         specifier: ^8.18.0
         version: 8.19.0
@@ -82,9 +85,6 @@ importers:
       '@types/ws':
         specifier: ^8.5.14
         version: 8.18.1
-      tsx:
-        specifier: ^4.19.3
-        version: 4.21.0
 
   shared:
     devDependencies:
@@ -1883,6 +1883,7 @@ snapshots:
   get-tsconfig@4.13.1:
     dependencies:
       resolve-pkg-maps: 1.0.0
+    optional: true
 
   glob-parent@6.0.2:
     dependencies:
@@ -2022,7 +2023,8 @@ snapshots:
 
   resolve-from@4.0.0: {}
 
-  resolve-pkg-maps@1.0.0: {}
+  resolve-pkg-maps@1.0.0:
+    optional: true
 
   rollup@4.57.1:
     dependencies:
@@ -2090,6 +2092,7 @@ snapshots:
       get-tsconfig: 4.13.1
     optionalDependencies:
       fsevents: 2.3.3
+    optional: true
 
   type-check@0.4.0:
     dependencies:
