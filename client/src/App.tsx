@@ -28,9 +28,11 @@ function App() {
 
   // Drawing logic with WebSocket integration
   const {
+    tool,
     color,
     width,
     userId,
+    setTool,
     setColor,
     setWidth,
     handleClear,
@@ -89,8 +91,10 @@ function App() {
   return (
     <div className="app">
       <Toolbar
+        tool={tool}
         color={color}
         width={width}
+        onToolChange={setTool}
         onColorChange={setColor}
         onWidthChange={setWidth}
         onClear={handleClear}

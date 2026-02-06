@@ -69,11 +69,17 @@ pnpm format
 - Per-stroke 전송: mouseUp/Leave 시점에 완성된 stroke 전송
 
 ### Phase 3: 추가 기능
+- [x] 지우개 도구
 - [ ] 도형 도구 (사각형, 원, 선)
 - [ ] 텍스트 추가
-- [ ] 지우개 도구
 - [ ] Undo/Redo
 - [ ] 사용자 커서 표시
+
+**구현 내역 (지우개)**:
+- useDrawing 훅: tool 상태 추가 ('pen' | 'eraser')
+- drawingUtils: globalCompositeOperation을 'destination-out'으로 전환하여 지우개 구현
+- Toolbar 컴포넌트: 펫/지우개 토글 버튼 추가, 지우개 선택 시 색상 팔레트 비활성화
+- App.tsx: tool/setTool props를 Toolbar에 전달
 
 ### 마이그레이션 테스트 (선택)
 - [ ] Fabric.js로 전환 요청

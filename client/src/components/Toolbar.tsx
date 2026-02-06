@@ -1,8 +1,11 @@
+import type { DrawingTool } from '@dolcanvas/shared';
 import './Toolbar.css';
 
 interface ToolbarProps {
+  tool: DrawingTool;
   color: string;
   width: number;
+  onToolChange: (tool: DrawingTool) => void;
   onColorChange: (color: string) => void;
   onWidthChange: (width: number) => void;
   onClear: () => void;
@@ -20,8 +23,10 @@ const PRESET_COLORS = [
 ];
 
 export function Toolbar({
+  tool,
   color,
   width,
+  onToolChange,
   onColorChange,
   onWidthChange,
   onClear,
@@ -29,6 +34,28 @@ export function Toolbar({
   return (
     <div className="toolbar">
       <div className="toolbar-section">
+        <span className="toolbar-label">Tool:</span>
+        <div className="tool-buttons">
+          <button
+            className={`tool-button ${tool === 'pen' ? 'selected' : ''}`}
+            onClick={() => onToolChange('pen')}
+            title="Pen"
+            aria-label="Select Pen tool"
+          >
+            🖊️ Pen
+          </button>
+          <button
+            className={`tool-button ${tool === 'eraser' ? 'selected' : ''}`}
+            onClick={() => onToolChange('eraser')}
+            title="Eraser"
+            aria-label="Select Eraser tool"
+          >
+            🧹 Eraser
+          </button>
+        </div>
+      </div>
+
+      <div className={`toolbar-section ${tool === 'eraser' ? 'dimmed' : ''}`}>
         <span className="toolbar-label">Color:</span>
         <div className="color-palette">
           {PRESET_COLORS.map((preset) => (
@@ -39,6 +66,7 @@ export function Toolbar({
               onClick={() => onColorChange(preset.value)}
               title={preset.name}
               aria-label={`Select ${preset.name}`}
+              disabled={tool === 'eraser'}
             />
           ))}
         </div>

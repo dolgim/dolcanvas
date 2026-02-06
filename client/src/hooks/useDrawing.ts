@@ -2,6 +2,7 @@ import { useRef, useState, useCallback, RefObject } from 'react';
 import type {
   DrawStroke,
   DrawPoint,
+  DrawingTool,
   WSMessage,
   DrawMessagePayload,
   ClearMessagePayload,
@@ -24,6 +25,7 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
   const [strokes, setStrokes] = useState<DrawStroke[]>([]);
   const [color, setColor] = useState('#000000');
   const [width, setWidth] = useState(2);
+  const [tool, setTool] = useState<DrawingTool>('pen');
 
   const isDrawingRef = useRef(false);
   const currentStrokeRef = useRef<DrawStroke | null>(null);
@@ -57,11 +59,11 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
         points: [point],
         color,
         width,
-        tool: 'pen',
+        tool,
         userId: USER_ID,
       };
     },
-    [canvasRef, getCanvasPoint, color, width],
+    [canvasRef, getCanvasPoint, color, width, tool],
   );
 
   const handleMouseMove = useCallback(
@@ -79,7 +81,7 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
       const lastPoint = stroke.points[stroke.points.length - 1];
 
       // Draw line segment immediately (imperative rendering)
-      drawLineSegment(ctx, lastPoint, point, stroke.color, stroke.width);
+      drawLineSegment(ctx, lastPoint, point, stroke.color, stroke.width, stroke.tool);
 
       // Add point to current stroke
       stroke.points.push(point);
@@ -193,9 +195,11 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
     strokes,
     color,
     width,
+    tool,
     userId: USER_ID,
     setColor,
     setWidth,
+    setTool,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,

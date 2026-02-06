@@ -1,4 +1,4 @@
-import type { DrawPoint, DrawStroke } from '@dolcanvas/shared';
+import type { DrawPoint, DrawStroke, DrawingTool } from '@dolcanvas/shared';
 
 /**
  * Draw a line segment between two points (for real-time drawing)
@@ -9,7 +9,13 @@ export function drawLineSegment(
   to: DrawPoint,
   color: string,
   width: number,
+  tool: DrawingTool = 'pen',
 ): void {
+  // Set composite operation for eraser
+  if (tool === 'eraser') {
+    ctx.globalCompositeOperation = 'destination-out';
+  }
+
   ctx.strokeStyle = color;
   ctx.lineWidth = width;
   ctx.lineCap = 'round';
@@ -19,6 +25,11 @@ export function drawLineSegment(
   ctx.moveTo(from.x, from.y);
   ctx.lineTo(to.x, to.y);
   ctx.stroke();
+
+  // Restore composite operation
+  if (tool === 'eraser') {
+    ctx.globalCompositeOperation = 'source-over';
+  }
 }
 
 /**
@@ -29,6 +40,11 @@ export function drawStroke(
   stroke: DrawStroke,
 ): void {
   if (stroke.points.length === 0) return;
+
+  // Set composite operation for eraser
+  if (stroke.tool === 'eraser') {
+    ctx.globalCompositeOperation = 'destination-out';
+  }
 
   ctx.strokeStyle = stroke.color;
   ctx.lineWidth = stroke.width;
@@ -43,6 +59,11 @@ export function drawStroke(
   }
 
   ctx.stroke();
+
+  // Restore composite operation
+  if (stroke.tool === 'eraser') {
+    ctx.globalCompositeOperation = 'source-over';
+  }
 }
 
 /**
