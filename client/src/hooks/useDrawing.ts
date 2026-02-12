@@ -1,4 +1,5 @@
-import { useRef, useState, useCallback, RefObject } from 'react';
+import { useRef, useState, useCallback } from 'react';
+import type { RefObject } from 'react';
 import type {
   DrawStroke,
   DrawPoint,
@@ -19,7 +20,7 @@ import {
 const USER_ID = generateUserId();
 
 interface UseDrawingOptions {
-  canvasRef: RefObject<HTMLCanvasElement>;
+  canvasRef: RefObject<HTMLCanvasElement | null>;
   sendMessage?: <T>(message: WSMessage<T>) => void;
 }
 

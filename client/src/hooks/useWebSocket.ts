@@ -8,7 +8,7 @@ interface UseWebSocketOptions {
 
 export function useWebSocket({ url, onMessage }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const onMessageRef = useRef(onMessage);
 
   // Keep onMessage callback up to date
