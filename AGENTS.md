@@ -55,6 +55,26 @@ gh pr create --title "제목" --body "설명"
 # 또는 브라우저에서 GitHub 웹사이트에서 PR 생성
 ```
 
+### Git Worktree (기본 작업 방식)
+
+**새 브랜치에서 작업할 때는 항상 `git worktree`를 사용한다.** 메인 작업 디렉토리의 브랜치 상태를 변경하지 않아 세션 간 충돌을 방지한다.
+
+```bash
+# 1. worktree 생성 (프로젝트 루트의 상위 디렉토리에 생성)
+git worktree add ../dolcanvas-<브랜치명> -b <브랜치명>
+
+# 2. worktree 디렉토리로 이동하여 작업
+cd ../dolcanvas-<브랜치명>
+pnpm install
+
+# 3. 작업 완료 후 worktree 정리
+git worktree remove ../dolcanvas-<브랜치명>
+```
+
+- 모든 브랜치 작업은 worktree에서 수행한다
+- 메인 디렉토리(`dolcanvas/`)는 항상 `main` 브랜치를 유지한다
+- worktree 작업 완료 후 반드시 정리한다
+
 ### 브랜치 네이밍 컨벤션
 - `feature/<기능명>`: 새로운 기능 추가
 - `phase3/<기능명>`: Phase 3 관련 기능
@@ -86,8 +106,10 @@ gh pr create --title "제목" --body "설명"
 - `shared/src/types.ts`의 타입을 사용하여 타입 안정성을 유지한다
 - 구현 후 테스트/확인 방법을 안내한다
 - 작업 완료 시 `ROADMAP.md`의 체크리스트와 프로젝트 상태를 업데이트한다
+- 사용자가 후속 작업을 지시하면 `ROADMAP.md`에 업데이트한다
 - 기존 코드의 패턴과 컨벤션을 따른다
 - PR 생성 시 테스트 결과와 스크린샷(필요 시)을 포함한다
+- 작업 완료 시 `pnpm lint`와 TypeScript 타입 에러가 없는지 반드시 확인한다
 
 ### ❌ DON'T
 - main 브랜치에 직접 커밋하지 않는다 (문서 업데이트 제외)
