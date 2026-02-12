@@ -11,6 +11,6 @@
     "lint": "eslint src/**/*.ts"
   },
   "devDependencies": {
-    "@types/node": "^22.13.5"
+    "@types/node": "^24.10.1"
   }
 }
