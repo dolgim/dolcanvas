@@ -2,7 +2,7 @@
 
 ## 현재 상태
 
-Phase 3 진행 중, 다음 작업: 도형 도구 (사각형, 원, 선)
+Phase 3 진행 중, 다음 작업: 사용자 커서 표시 또는 텍스트 추가
 
 ## 다음 작업 (우선순위 순)
 
@@ -77,7 +77,7 @@ pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
 
 - [x] 지우개 도구
 - [x] Undo/Redo
-- [ ] 도형 도구 (사각형, 원, 선)
+- [x] 도형 도구 (사각형, 원, 선)
 - [ ] 텍스트 추가
 - [ ] 사용자 커서 표시
 
@@ -95,6 +95,14 @@ pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
 - Toolbar: Undo/Redo 버튼 그룹, disabled 상태 스타일링
 - Per-user undo: 자신의 마지막 스트로크만 undo (다른 사용자 스트로크 영향 없음)
 - 새 스트로크/Clear/Sync 시 redoStack 초기화 (표준 undo/redo 동작)
+
+**구현 내역 (도형 도구)**:
+- shared/types.ts: DrawingTool에 'rectangle' | 'circle' | 'line' 추가
+- drawingUtils.ts: isShapeTool() 헬퍼, drawShape() 함수 (rect/ellipse/line), drawStroke()에서 도형 위임
+- useDrawing.ts: 스냅샷 기반 미리보기 (getImageData/putImageData), shapeStartPointRef/lastPointRef로 도형 좌표 관리
+- Toolbar.tsx: Rect/Circle/Line 버튼 추가 (구분선으로 펜/지우개와 시각적 분리)
+- 제로 사이즈 도형 무시, 드래그 중 원격 스트로크 도착 시 redrawAllStrokes 폴백
+- 서버 변경 불필요 (도형도 2포인트 stroke로 표현)
 
 ## 미래 아이디어 (선택)
 

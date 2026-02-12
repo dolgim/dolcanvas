@@ -1,7 +1,7 @@
 /**
  * 그리기 도구 타입
  */
-export type DrawingTool = 'pen' | 'eraser';
+export type DrawingTool = 'pen' | 'eraser' | 'rectangle' | 'circle' | 'line';
 
 /**
  * 그리기 데이터 포인트

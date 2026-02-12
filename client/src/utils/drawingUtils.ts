@@ -1,6 +1,51 @@
 import type { DrawPoint, DrawStroke, DrawingTool } from '@dolcanvas/shared';
 
 /**
+ * Check if a tool is a shape tool
+ */
+export function isShapeTool(tool: DrawingTool): boolean {
+  return tool === 'rectangle' || tool === 'circle' || tool === 'line';
+}
+
+/**
+ * Draw a shape between two points
+ */
+export function drawShape(
+  ctx: CanvasRenderingContext2D,
+  start: DrawPoint,
+  end: DrawPoint,
+  color: string,
+  width: number,
+  tool: DrawingTool,
+): void {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  ctx.beginPath();
+
+  if (tool === 'rectangle') {
+    const x = Math.min(start.x, end.x);
+    const y = Math.min(start.y, end.y);
+    const w = Math.abs(end.x - start.x);
+    const h = Math.abs(end.y - start.y);
+    ctx.rect(x, y, w, h);
+  } else if (tool === 'circle') {
+    const cx = (start.x + end.x) / 2;
+    const cy = (start.y + end.y) / 2;
+    const rx = Math.abs(end.x - start.x) / 2;
+    const ry = Math.abs(end.y - start.y) / 2;
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  } else if (tool === 'line') {
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
+  }
+
+  ctx.stroke();
+}
+
+/**
  * Draw a line segment between two points (for real-time drawing)
  */
 export function drawLineSegment(
@@ -40,6 +85,19 @@ export function drawStroke(
   stroke: DrawStroke,
 ): void {
   if (stroke.points.length === 0) return;
+
+  // Shape tools: delegate to drawShape (uses first and last points)
+  if (isShapeTool(stroke.tool) && stroke.points.length >= 2) {
+    drawShape(
+      ctx,
+      stroke.points[0],
+      stroke.points[stroke.points.length - 1],
+      stroke.color,
+      stroke.width,
+      stroke.tool,
+    );
+    return;
+  }
 
   // Set composite operation for eraser
   if (stroke.tool === 'eraser') {
