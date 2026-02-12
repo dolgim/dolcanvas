@@ -5,11 +5,13 @@ interface ToolbarProps {
   tool: DrawingTool;
   color: string;
   width: number;
+  fontSize: number;
   canUndo: boolean;
   canRedo: boolean;
   onToolChange: (tool: DrawingTool) => void;
   onColorChange: (color: string) => void;
   onWidthChange: (width: number) => void;
+  onFontSizeChange: (size: number) => void;
   onClear: () => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -30,15 +32,19 @@ export function Toolbar({
   tool,
   color,
   width,
+  fontSize,
   canUndo,
   canRedo,
   onToolChange,
   onColorChange,
   onWidthChange,
+  onFontSizeChange,
   onClear,
   onUndo,
   onRedo,
 }: ToolbarProps) {
+  const isTextTool = tool === 'text';
+
   return (
     <div className="toolbar">
       <div className="toolbar-section">
@@ -85,6 +91,15 @@ export function Toolbar({
           >
             ╱ Line
           </button>
+          <span className="tool-separator" />
+          <button
+            className={`tool-button ${tool === 'text' ? 'selected' : ''}`}
+            onClick={() => onToolChange('text')}
+            title="Text"
+            aria-label="Select Text tool"
+          >
+            T Text
+          </button>
         </div>
       </div>
 
@@ -128,29 +143,47 @@ export function Toolbar({
         </div>
       </div>
 
-      <div className="toolbar-section">
-        <span className="toolbar-label">Width:</span>
-        <div className="width-control">
-          <input
-            type="range"
-            min="1"
-            max="20"
-            value={width}
-            onChange={(e) => onWidthChange(Number(e.target.value))}
-            className="width-slider"
-            aria-label="Line width"
-          />
-          <div className="width-preview">
-            <div
-              className="width-preview-dot"
-              style={{
-                width: `${width}px`,
-                height: `${width}px`,
-              }}
+      {isTextTool ? (
+        <div className="toolbar-section">
+          <span className="toolbar-label">Font Size:</span>
+          <div className="width-control">
+            <input
+              type="range"
+              min="12"
+              max="72"
+              value={fontSize}
+              onChange={(e) => onFontSizeChange(Number(e.target.value))}
+              className="width-slider"
+              aria-label="Font size"
             />
+            <span className="font-size-value">{fontSize}px</span>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="toolbar-section">
+          <span className="toolbar-label">Width:</span>
+          <div className="width-control">
+            <input
+              type="range"
+              min="1"
+              max="20"
+              value={width}
+              onChange={(e) => onWidthChange(Number(e.target.value))}
+              className="width-slider"
+              aria-label="Line width"
+            />
+            <div className="width-preview">
+              <div
+                className="width-preview-dot"
+                style={{
+                  width: `${width}px`,
+                  height: `${width}px`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <button className="clear-button" onClick={onClear}>
         Clear Canvas

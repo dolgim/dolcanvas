@@ -4,10 +4,24 @@
   align-items: center;
   justify-content: center;
   background-color: #f0f0f0;
+  position: relative;
 }
 
 canvas {
   display: block;
   cursor: crosshair;
   background-color: white;
+}
+
+.canvas-text-input {
+  position: absolute;
+  background: transparent;
+  border: 1px dashed #999;
+  outline: none;
+  resize: none;
+  min-width: 100px;
+  min-height: 1.2em;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
 }

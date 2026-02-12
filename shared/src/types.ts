@@ -1,7 +1,7 @@
 /**
  * 그리기 도구 타입
  */
-export type DrawingTool = 'pen' | 'eraser' | 'rectangle' | 'circle' | 'line';
+export type DrawingTool = 'pen' | 'eraser' | 'rectangle' | 'circle' | 'line' | 'text';
 
 /**
  * 그리기 데이터 포인트
@@ -22,6 +22,8 @@ export interface DrawStroke {
   width: number;
   tool: DrawingTool;
   userId: string;
+  text?: string;
+  fontSize?: number;
 }
 
 /**
