@@ -10,6 +10,7 @@ export function useWebSocket({ url, onMessage }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const onMessageRef = useRef(onMessage);
+  const connectRef = useRef<(() => void) | undefined>(undefined);
 
   // Keep onMessage callback up to date
   useEffect(() => {
@@ -40,7 +41,7 @@ export function useWebSocket({ url, onMessage }: UseWebSocketOptions) {
 
         // Auto-reconnect after 3 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
-          connect();
+          connectRef.current?.();
         }, 3000);
       };
 
@@ -51,6 +52,11 @@ export function useWebSocket({ url, onMessage }: UseWebSocketOptions) {
       console.error('Failed to connect to WebSocket:', error);
     }
   }, [url]);
+
+  // Keep connectRef up to date for reconnection
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
 
   // Connect on mount
   useEffect(() => {
@@ -75,8 +81,5 @@ export function useWebSocket({ url, onMessage }: UseWebSocketOptions) {
     }
   }, []);
 
-  return {
-    sendMessage,
-    isConnected: wsRef.current?.readyState === WebSocket.OPEN,
-  };
+  return { sendMessage };
 }
