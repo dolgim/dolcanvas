@@ -7,11 +7,7 @@ Phase 3 진행 중, 다음 작업: 사용자 커서 표시
 ## 다음 작업 (우선순위 순)
 
 1. 사용자 커서 표시
-2. 의존성 정리
-   - ESLint 버전 통일 (루트 `^9.18.0` vs client `^9.39.1`)
-   - `typescript-eslint` 버전 통일 (루트 `^8.54.0` vs client `^8.46.4`)
-   - 루트 `package.json`에 `"type": "module"` 추가 검토 (ESM 경고 제거)
-   - 전반적인 devDependencies 정리
+2. ~~의존성 정리~~ ✅ (완료)
 
 ## 완료된 작업
 
