@@ -60,6 +60,31 @@ export function Toolbar({
           >
             🧹 Eraser
           </button>
+          <span className="tool-separator" />
+          <button
+            className={`tool-button ${tool === 'rectangle' ? 'selected' : ''}`}
+            onClick={() => onToolChange('rectangle')}
+            title="Rectangle"
+            aria-label="Select Rectangle tool"
+          >
+            ▭ Rect
+          </button>
+          <button
+            className={`tool-button ${tool === 'circle' ? 'selected' : ''}`}
+            onClick={() => onToolChange('circle')}
+            title="Circle"
+            aria-label="Select Circle tool"
+          >
+            ⭕ Circle
+          </button>
+          <button
+            className={`tool-button ${tool === 'line' ? 'selected' : ''}`}
+            onClick={() => onToolChange('line')}
+            title="Line"
+            aria-label="Select Line tool"
+          >
+            ╱ Line
+          </button>
         </div>
       </div>
 

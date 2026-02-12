@@ -13,7 +13,9 @@ import type {
 import { generateStrokeId, generateUserId } from '../utils/idGenerator';
 import {
   drawLineSegment,
+  drawShape,
   drawStroke,
+  isShapeTool,
   redrawAllStrokes,
 } from '../utils/drawingUtils';
 
@@ -33,6 +35,10 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
   const isDrawingRef = useRef(false);
   const currentStrokeRef = useRef<DrawStroke | null>(null);
+  const canvasSnapshotRef = useRef<ImageData | null>(null);
+  const shapeStartPointRef = useRef<DrawPoint | null>(null);
+  const lastPointRef = useRef<DrawPoint | null>(null);
+  const strokesChangedDuringDragRef = useRef(false);
 
   const getCanvasPoint = useCallback(
     (clientX: number, clientY: number): DrawPoint | null => {
@@ -66,6 +72,22 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
         tool,
         userId: USER_ID,
       };
+
+      // Shape tools: save canvas snapshot for preview rendering
+      if (isShapeTool(tool)) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          canvasSnapshotRef.current = ctx.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height,
+          );
+        }
+        shapeStartPointRef.current = point;
+        lastPointRef.current = point;
+        strokesChangedDuringDragRef.current = false;
+      }
     },
     [canvasRef, getCanvasPoint, color, width, tool],
   );
@@ -82,13 +104,36 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
       if (!point) return;
 
       const stroke = currentStrokeRef.current;
-      const lastPoint = stroke.points[stroke.points.length - 1];
 
-      // Draw line segment immediately (imperative rendering)
-      drawLineSegment(ctx, lastPoint, point, stroke.color, stroke.width, stroke.tool);
-
-      // Add point to current stroke
-      stroke.points.push(point);
+      if (isShapeTool(stroke.tool)) {
+        // Shape tools: restore snapshot then draw preview
+        if (canvasSnapshotRef.current) {
+          ctx.putImageData(canvasSnapshotRef.current, 0, 0);
+        }
+        if (shapeStartPointRef.current) {
+          drawShape(
+            ctx,
+            shapeStartPointRef.current,
+            point,
+            stroke.color,
+            stroke.width,
+            stroke.tool,
+          );
+        }
+        lastPointRef.current = point;
+      } else {
+        // Pen/eraser: additive rendering
+        const lastPoint = stroke.points[stroke.points.length - 1];
+        drawLineSegment(
+          ctx,
+          lastPoint,
+          point,
+          stroke.color,
+          stroke.width,
+          stroke.tool,
+        );
+        stroke.points.push(point);
+      }
     },
     [canvasRef, getCanvasPoint],
   );
@@ -97,9 +142,60 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
     if (!isDrawingRef.current || !currentStrokeRef.current) return;
 
     const finishedStroke = currentStrokeRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
 
-    // Add finished stroke to strokes array
-    setStrokes((prev) => [...prev, finishedStroke]);
+    // Shape tools: finalize with start and end points
+    if (isShapeTool(finishedStroke.tool)) {
+      const start = shapeStartPointRef.current;
+      const end = lastPointRef.current;
+
+      // Ignore zero-size shapes (click without drag)
+      if (
+        !start ||
+        !end ||
+        (start.x === end.x && start.y === end.y)
+      ) {
+        // Restore snapshot to clear any preview
+        if (ctx && canvasSnapshotRef.current) {
+          ctx.putImageData(canvasSnapshotRef.current, 0, 0);
+        }
+        isDrawingRef.current = false;
+        currentStrokeRef.current = null;
+        canvasSnapshotRef.current = null;
+        shapeStartPointRef.current = null;
+        lastPointRef.current = null;
+        return;
+      }
+
+      finishedStroke.points = [start, end];
+
+      // If remote strokes arrived during drag, do full redraw
+      if (canvas && ctx && strokesChangedDuringDragRef.current) {
+        setStrokes((prev) => {
+          const newStrokes = [...prev, finishedStroke];
+          redrawAllStrokes(ctx, newStrokes, canvas.width, canvas.height);
+          return newStrokes;
+        });
+      } else {
+        // Restore snapshot and draw final shape
+        if (ctx && canvasSnapshotRef.current) {
+          ctx.putImageData(canvasSnapshotRef.current, 0, 0);
+        }
+        if (ctx) {
+          drawShape(ctx, start, end, finishedStroke.color, finishedStroke.width, finishedStroke.tool);
+        }
+        setStrokes((prev) => [...prev, finishedStroke]);
+      }
+
+      canvasSnapshotRef.current = null;
+      shapeStartPointRef.current = null;
+      lastPointRef.current = null;
+    } else {
+      // Pen/eraser: add finished stroke
+      setStrokes((prev) => [...prev, finishedStroke]);
+    }
+
     setRedoStack([]);
 
     // Send to server
@@ -114,15 +210,62 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
     isDrawingRef.current = false;
     currentStrokeRef.current = null;
-  }, [sendMessage]);
+  }, [canvasRef, sendMessage]);
 
   const handleMouseLeave = useCallback(() => {
     if (!isDrawingRef.current || !currentStrokeRef.current) return;
 
     const finishedStroke = currentStrokeRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
 
-    // Add finished stroke to strokes array
-    setStrokes((prev) => [...prev, finishedStroke]);
+    // Shape tools: finalize with start and last tracked point
+    if (isShapeTool(finishedStroke.tool)) {
+      const start = shapeStartPointRef.current;
+      const end = lastPointRef.current;
+
+      // Ignore zero-size shapes
+      if (
+        !start ||
+        !end ||
+        (start.x === end.x && start.y === end.y)
+      ) {
+        if (ctx && canvasSnapshotRef.current) {
+          ctx.putImageData(canvasSnapshotRef.current, 0, 0);
+        }
+        isDrawingRef.current = false;
+        currentStrokeRef.current = null;
+        canvasSnapshotRef.current = null;
+        shapeStartPointRef.current = null;
+        lastPointRef.current = null;
+        return;
+      }
+
+      finishedStroke.points = [start, end];
+
+      if (canvas && ctx && strokesChangedDuringDragRef.current) {
+        setStrokes((prev) => {
+          const newStrokes = [...prev, finishedStroke];
+          redrawAllStrokes(ctx, newStrokes, canvas.width, canvas.height);
+          return newStrokes;
+        });
+      } else {
+        if (ctx && canvasSnapshotRef.current) {
+          ctx.putImageData(canvasSnapshotRef.current, 0, 0);
+        }
+        if (ctx) {
+          drawShape(ctx, start, end, finishedStroke.color, finishedStroke.width, finishedStroke.tool);
+        }
+        setStrokes((prev) => [...prev, finishedStroke]);
+      }
+
+      canvasSnapshotRef.current = null;
+      shapeStartPointRef.current = null;
+      lastPointRef.current = null;
+    } else {
+      setStrokes((prev) => [...prev, finishedStroke]);
+    }
+
     setRedoStack([]);
 
     // Send to server
@@ -137,7 +280,7 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
     isDrawingRef.current = false;
     currentStrokeRef.current = null;
-  }, [sendMessage]);
+  }, [canvasRef, sendMessage]);
 
   const handleClear = useCallback(() => {
     const canvas = canvasRef.current;
@@ -165,6 +308,15 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext('2d');
       if (!canvas || !ctx) return;
+
+      // Flag that strokes changed during shape drag (for full redraw on mouseUp)
+      if (
+        isDrawingRef.current &&
+        currentStrokeRef.current &&
+        isShapeTool(currentStrokeRef.current.tool)
+      ) {
+        strokesChangedDuringDragRef.current = true;
+      }
 
       // Add to state
       setStrokes((prev) => [...prev, stroke]);
