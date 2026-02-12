@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
 import type { RefObject } from 'react';
+import type { RemoteCursor } from '../hooks/useCursors';
+import { CursorOverlay } from './CursorOverlay';
 import './Canvas.css';
 
 interface CanvasProps {
   canvasRef: RefObject<HTMLCanvasElement | null>;
+  cursors: Map<string, RemoteCursor>;
   onMouseDown: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   onMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   onMouseUp: () => void;
@@ -12,6 +15,7 @@ interface CanvasProps {
 
 export function Canvas({
   canvasRef,
+  cursors,
   onMouseDown,
   onMouseMove,
   onMouseUp,
@@ -54,6 +58,7 @@ export function Canvas({
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseLeave}
       />
+      <CursorOverlay cursors={cursors} />
     </div>
   );
 }

@@ -2,12 +2,11 @@
 
 ## 현재 상태
 
-Phase 3 진행 중, 다음 작업: 사용자 커서 표시 또는 텍스트 추가
+Phase 3 진행 중, 다음 작업: 텍스트 추가
 
 ## 다음 작업 (우선순위 순)
 
-1. 사용자 커서 표시
-2. 텍스트 추가
+1. 텍스트 추가
 3. 의존성 정리
    - ESLint 버전 통일 (루트 `^9.18.0` vs client `^9.39.1`)
    - `typescript-eslint` 버전 통일 (루트 `^8.54.0` vs client `^8.46.4`)
@@ -83,7 +82,7 @@ pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
 - [x] Undo/Redo
 - [x] 도형 도구 (사각형, 원, 선)
 - [ ] 텍스트 추가
-- [ ] 사용자 커서 표시
+- [x] 사용자 커서 표시
 
 **구현 내역 (지우개)**:
 - useDrawing 훅: tool 상태 추가 ('pen' | 'eraser')
@@ -107,6 +106,14 @@ pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
 - Toolbar.tsx: Rect/Circle/Line 버튼 추가 (구분선으로 펜/지우개와 시각적 분리)
 - 제로 사이즈 도형 무시, 드래그 중 원격 스트로크 도착 시 redrawAllStrokes 폴백
 - 서버 변경 불필요 (도형도 2포인트 stroke로 표현)
+
+**구현 내역 (사용자 커서 표시)**:
+- shared/types.ts: MessageType에 'cursor' 추가, CursorMessagePayload/UserInfo 인터페이스, SyncMessagePayload에 users 필드, JoinMessagePayload에 colorIndex 필드
+- server/index.ts: 사용자 추적 Map (WebSocket → UserInfo), 8가지 색상 순환 배정, join 시 sync에 users 포함 + join broadcast, cursor 릴레이, close 시 leave broadcast
+- useCursors 훅: remoteCursors 상태 관리, 50ms 쓰로틀링 커서 전송, join/leave/sync 핸들러
+- CursorOverlay 컴포넌트: DOM 오버레이 (pointer-events: none), SVG 화살표 커서 + 라벨, 8가지 색상, CSS transition
+- Canvas 컴포넌트: cursors prop 추가, CursorOverlay 렌더링, position: relative 추가
+- App.tsx: useCursors 통합, handleMouseMove/Leave 래핑, cursor/join/leave 메시지 라우팅
 
 ## 미래 아이디어 (선택)
 
