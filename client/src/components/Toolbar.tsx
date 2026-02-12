@@ -5,10 +5,14 @@ interface ToolbarProps {
   tool: DrawingTool;
   color: string;
   width: number;
+  canUndo: boolean;
+  canRedo: boolean;
   onToolChange: (tool: DrawingTool) => void;
   onColorChange: (color: string) => void;
   onWidthChange: (width: number) => void;
   onClear: () => void;
+  onUndo: () => void;
+  onRedo: () => void;
 }
 
 const PRESET_COLORS = [
@@ -26,10 +30,14 @@ export function Toolbar({
   tool,
   color,
   width,
+  canUndo,
+  canRedo,
   onToolChange,
   onColorChange,
   onWidthChange,
   onClear,
+  onUndo,
+  onRedo,
 }: ToolbarProps) {
   return (
     <div className="toolbar">
@@ -51,6 +59,29 @@ export function Toolbar({
             aria-label="Select Eraser tool"
           >
             🧹 Eraser
+          </button>
+        </div>
+      </div>
+
+      <div className="toolbar-section">
+        <div className="tool-buttons">
+          <button
+            className="tool-button"
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Undo (Ctrl+Z)"
+            aria-label="Undo"
+          >
+            ↩ Undo
+          </button>
+          <button
+            className="tool-button"
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Redo (Ctrl+Shift+Z)"
+            aria-label="Redo"
+          >
+            ↪ Redo
           </button>
         </div>
       </div>
