@@ -6,6 +6,8 @@ import type {
   WSMessage,
   DrawMessagePayload,
   ClearMessagePayload,
+  UndoMessagePayload,
+  RedoMessagePayload,
 } from '@dolcanvas/shared';
 import { generateStrokeId, generateUserId } from '../utils/idGenerator';
 import {
@@ -23,6 +25,7 @@ interface UseDrawingOptions {
 
 export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
   const [strokes, setStrokes] = useState<DrawStroke[]>([]);
+  const [redoStack, setRedoStack] = useState<DrawStroke[]>([]);
   const [color, setColor] = useState('#000000');
   const [width, setWidth] = useState(2);
   const [tool, setTool] = useState<DrawingTool>('pen');
@@ -96,6 +99,7 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
     // Add finished stroke to strokes array
     setStrokes((prev) => [...prev, finishedStroke]);
+    setRedoStack([]);
 
     // Send to server
     if (sendMessage) {
@@ -118,6 +122,7 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
     // Add finished stroke to strokes array
     setStrokes((prev) => [...prev, finishedStroke]);
+    setRedoStack([]);
 
     // Send to server
     if (sendMessage) {
@@ -139,6 +144,7 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
     if (!canvas || !ctx) return;
 
     setStrokes([]);
+    setRedoStack([]);
     redrawAllStrokes(ctx, [], canvas.width, canvas.height);
 
     // Send to server
@@ -175,6 +181,7 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
     if (!canvas || !ctx) return;
 
     setStrokes([]);
+    setRedoStack([]);
     redrawAllStrokes(ctx, [], canvas.width, canvas.height);
   }, [canvasRef]);
 
@@ -186,10 +193,89 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
       if (!canvas || !ctx) return;
 
       setStrokes(syncStrokes);
+      setRedoStack([]);
       redrawAllStrokes(ctx, syncStrokes, canvas.width, canvas.height);
     },
     [canvasRef],
   );
+
+  // Undo: remove the last stroke by this user
+  const handleUndo = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+
+    // Find the last stroke by this user
+    let lastIndex = -1;
+    for (let i = strokes.length - 1; i >= 0; i--) {
+      if (strokes[i].userId === USER_ID) {
+        lastIndex = i;
+        break;
+      }
+    }
+    if (lastIndex === -1) return;
+
+    const undoneStroke = strokes[lastIndex];
+    const newStrokes = strokes.filter((_, i) => i !== lastIndex);
+
+    setStrokes(newStrokes);
+    setRedoStack((prev) => [...prev, undoneStroke]);
+    redrawAllStrokes(ctx, newStrokes, canvas.width, canvas.height);
+
+    // Send to server
+    if (sendMessage) {
+      const message: WSMessage<UndoMessagePayload> = {
+        type: 'undo',
+        payload: { userId: USER_ID, strokeId: undoneStroke.id },
+        timestamp: Date.now(),
+      };
+      sendMessage(message);
+    }
+  }, [canvasRef, strokes, sendMessage]);
+
+  // Redo: restore the last undone stroke
+  const handleRedo = useCallback(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    if (redoStack.length === 0) return;
+
+    const restoredStroke = redoStack[redoStack.length - 1];
+
+    setRedoStack((prev) => prev.slice(0, -1));
+    setStrokes((prev) => [...prev, restoredStroke]);
+    drawStroke(ctx, restoredStroke);
+
+    // Send to server
+    if (sendMessage) {
+      const message: WSMessage<RedoMessagePayload> = {
+        type: 'redo',
+        payload: { userId: USER_ID, stroke: restoredStroke },
+        timestamp: Date.now(),
+      };
+      sendMessage(message);
+    }
+  }, [canvasRef, redoStack, sendMessage]);
+
+  // Handle remote undo from other users
+  const handleRemoteUndo = useCallback(
+    (strokeId: string) => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+      if (!canvas || !ctx) return;
+
+      setStrokes((prev) => {
+        const newStrokes = prev.filter((s) => s.id !== strokeId);
+        redrawAllStrokes(ctx, newStrokes, canvas.width, canvas.height);
+        return newStrokes;
+      });
+    },
+    [canvasRef],
+  );
+
+  // Handle remote redo from other users (reuse handleRemoteStroke logic)
+  const canUndo = strokes.some((s) => s.userId === USER_ID);
+  const canRedo = redoStack.length > 0;
 
   return {
     strokes,
@@ -197,6 +283,8 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
     width,
     tool,
     userId: USER_ID,
+    canUndo,
+    canRedo,
     setColor,
     setWidth,
     setTool,
@@ -205,8 +293,11 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
     handleMouseUp,
     handleMouseLeave,
     handleClear,
+    handleUndo,
+    handleRedo,
     handleRemoteStroke,
     handleRemoteClear,
+    handleRemoteUndo,
     handleSync,
   };
 }

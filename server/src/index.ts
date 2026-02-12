@@ -6,6 +6,8 @@ import type {
   ClearMessagePayload,
   JoinMessagePayload,
   SyncMessagePayload,
+  UndoMessagePayload,
+  RedoMessagePayload,
 } from '@dolcanvas/shared';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8080;
@@ -71,6 +73,31 @@ wss.on('connection', (ws) => {
           strokes.length = 0;
 
           // Broadcast to other clients (exclude sender)
+          broadcast(rawMessage.toString(), ws);
+          break;
+        }
+
+        case 'undo': {
+          const payload = message.payload as UndoMessagePayload;
+          console.log(`User ${payload.userId} undo stroke: ${payload.strokeId}`);
+
+          // Remove stroke from history
+          const undoIndex = strokes.findIndex(
+            (s) => s.id === payload.strokeId,
+          );
+          if (undoIndex !== -1) {
+            strokes.splice(undoIndex, 1);
+            broadcast(rawMessage.toString(), ws);
+          }
+          break;
+        }
+
+        case 'redo': {
+          const payload = message.payload as RedoMessagePayload;
+          console.log(`User ${payload.userId} redo stroke: ${payload.stroke.id}`);
+
+          // Add stroke back to history
+          strokes.push(payload.stroke);
           broadcast(rawMessage.toString(), ws);
           break;
         }

@@ -32,7 +32,9 @@ export type MessageType =
   | 'clear'
   | 'join'
   | 'leave'
-  | 'sync';
+  | 'sync'
+  | 'undo'
+  | 'redo';
 
 /**
  * WebSocket 메시지 기본 구조
@@ -76,4 +78,20 @@ export interface LeaveMessagePayload {
  */
 export interface SyncMessagePayload {
   strokes: DrawStroke[];
+}
+
+/**
+ * Undo 메시지 페이로드
+ */
+export interface UndoMessagePayload {
+  userId: string;
+  strokeId: string;
+}
+
+/**
+ * Redo 메시지 페이로드
+ */
+export interface RedoMessagePayload {
+  userId: string;
+  stroke: DrawStroke;
 }

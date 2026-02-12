@@ -110,7 +110,7 @@ gh pr create --title "제목" --body "설명"
 - [x] 지우개 도구
 - [ ] 도형 도구 (사각형, 원, 선)
 - [ ] 텍스트 추가
-- [ ] Undo/Redo
+- [x] Undo/Redo
 - [ ] 사용자 커서 표시
 
 **구현 내역 (지우개)**:
@@ -118,6 +118,15 @@ gh pr create --title "제목" --body "설명"
 - drawingUtils: globalCompositeOperation을 'destination-out'으로 전환하여 지우개 구현
 - Toolbar 컴포넌트: 펫/지우개 토글 버튼 추가, 지우개 선택 시 색상 팔레트 비활성화
 - App.tsx: tool/setTool props를 Toolbar에 전달
+
+**구현 내역 (Undo/Redo)**:
+- shared/types.ts: MessageType에 'undo'/'redo' 추가, UndoMessagePayload/RedoMessagePayload 인터페이스
+- server/index.ts: undo (strokeId로 삭제) / redo (stroke 복원) 핸들러 + broadcast
+- useDrawing 훅: redoStack 상태, handleUndo/handleRedo/handleRemoteUndo 핸들러, canUndo/canRedo
+- App.tsx: 메시지 라우팅 (undo/redo), 키보드 단축키 (Ctrl+Z, Ctrl+Shift+Z, Ctrl+Y)
+- Toolbar: Undo/Redo 버튼 그룹, disabled 상태 스타일링
+- Per-user undo: 자신의 마지막 스트로크만 undo (다른 사용자 스트로크 영향 없음)
+- 새 스트로크/Clear/Sync 시 redoStack 초기화 (표준 undo/redo 동작)
 
 ### 마이그레이션 테스트 (선택)
 - [ ] Fabric.js로 전환 요청
@@ -176,6 +185,6 @@ pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
 자세한 테스트 시나리오는 `TESTING.md` 참조.
 
 ---
-**마지막 업데이트**: 2026-02-06
-**프로젝트 상태**: Phase 3 진행 중 (지우개 완료)
+**마지막 업데이트**: 2026-02-12
+**프로젝트 상태**: Phase 3 진행 중 (지우개, Undo/Redo 완료)
 **Git 워크플로우**: 브랜치/PR 방식 적용 (2026-02-06부터)

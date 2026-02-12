@@ -3,8 +3,9 @@ import type {
   WSMessage,
   JoinMessagePayload,
   DrawMessagePayload,
-  ClearMessagePayload,
   SyncMessagePayload,
+  UndoMessagePayload,
+  RedoMessagePayload,
 } from '@dolcanvas/shared';
 import { Canvas } from './components/Canvas';
 import { Toolbar } from './components/Toolbar';
@@ -32,16 +33,21 @@ function App() {
     color,
     width,
     userId,
+    canUndo,
+    canRedo,
     setTool,
     setColor,
     setWidth,
     handleClear,
+    handleUndo,
+    handleRedo,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
     handleMouseLeave,
     handleRemoteStroke,
     handleRemoteClear,
+    handleRemoteUndo,
     handleSync,
   } = useDrawing({
     canvasRef,
@@ -66,11 +72,21 @@ function App() {
           handleSync(payload.strokes);
           break;
         }
+        case 'undo': {
+          const payload = message.payload as UndoMessagePayload;
+          handleRemoteUndo(payload.strokeId);
+          break;
+        }
+        case 'redo': {
+          const payload = message.payload as RedoMessagePayload;
+          handleRemoteStroke(payload.stroke);
+          break;
+        }
         default:
           console.warn(`Unknown message type: ${message.type}`);
       }
     },
-    [handleRemoteStroke, handleRemoteClear, handleSync],
+    [handleRemoteStroke, handleRemoteClear, handleRemoteUndo, handleSync],
   );
 
   // Update message handler ref
@@ -88,16 +104,39 @@ function App() {
     sendMessage(joinMessage);
   }, [userId, sendMessage]);
 
+  // Keyboard shortcuts for undo/redo
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      } else if (
+        (mod && e.key === 'z' && e.shiftKey) ||
+        (e.ctrlKey && e.key === 'y')
+      ) {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleUndo, handleRedo]);
+
   return (
     <div className="app">
       <Toolbar
         tool={tool}
         color={color}
         width={width}
+        canUndo={canUndo}
+        canRedo={canRedo}
         onToolChange={setTool}
         onColorChange={setColor}
         onWidthChange={setWidth}
         onClear={handleClear}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
       />
       <Canvas
         canvasRef={canvasRef}
