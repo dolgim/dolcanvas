@@ -139,6 +139,14 @@
   border-radius: 50%;
 }
 
+.font-size-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #333;
+  min-width: 36px;
+  text-align: center;
+}
+
 .clear-button {
   padding: 0.5rem 1rem;
   background-color: #f44336;

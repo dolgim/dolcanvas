@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import type { RefObject } from 'react';
+import type { TextInputState } from '../hooks/useDrawing';
+import { TextInput } from './TextInput';
 import './Canvas.css';
 
 interface CanvasProps {
@@ -8,6 +10,11 @@ interface CanvasProps {
   onMouseMove: (e: React.MouseEvent<HTMLCanvasElement>) => void;
   onMouseUp: () => void;
   onMouseLeave: () => void;
+  textInput: TextInputState | null;
+  textColor: string;
+  textFontSize: number;
+  onCommitText: (text: string) => void;
+  onCancelText: () => void;
 }
 
 export function Canvas({
@@ -16,6 +23,11 @@ export function Canvas({
   onMouseMove,
   onMouseUp,
   onMouseLeave,
+  textInput,
+  textColor,
+  textFontSize,
+  onCommitText,
+  onCancelText,
 }: CanvasProps) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -54,6 +66,15 @@ export function Canvas({
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseLeave}
       />
+      {textInput && (
+        <TextInput
+          position={textInput.position}
+          color={textColor}
+          fontSize={textFontSize}
+          onCommit={onCommitText}
+          onCancel={onCancelText}
+        />
+      )}
     </div>
   );
 }

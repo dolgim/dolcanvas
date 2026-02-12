@@ -2,13 +2,12 @@
 
 ## 현재 상태
 
-Phase 3 진행 중, 다음 작업: 사용자 커서 표시 또는 텍스트 추가
+Phase 3 진행 중, 다음 작업: 사용자 커서 표시
 
 ## 다음 작업 (우선순위 순)
 
 1. 사용자 커서 표시
-2. 텍스트 추가
-3. 의존성 정리
+2. 의존성 정리
    - ESLint 버전 통일 (루트 `^9.18.0` vs client `^9.39.1`)
    - `typescript-eslint` 버전 통일 (루트 `^8.54.0` vs client `^8.46.4`)
    - 루트 `package.json`에 `"type": "module"` 추가 검토 (ESM 경고 제거)
@@ -82,7 +81,7 @@ pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
 - [x] 지우개 도구
 - [x] Undo/Redo
 - [x] 도형 도구 (사각형, 원, 선)
-- [ ] 텍스트 추가
+- [x] 텍스트 추가
 - [ ] 사용자 커서 표시
 
 **구현 내역 (지우개)**:
@@ -107,6 +106,17 @@ pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
 - Toolbar.tsx: Rect/Circle/Line 버튼 추가 (구분선으로 펜/지우개와 시각적 분리)
 - 제로 사이즈 도형 무시, 드래그 중 원격 스트로크 도착 시 redrawAllStrokes 폴백
 - 서버 변경 불필요 (도형도 2포인트 stroke로 표현)
+
+**구현 내역 (텍스트 도구)**:
+- shared/types.ts: DrawingTool에 'text' 추가, DrawStroke에 text?/fontSize? 필드 추가
+- drawingUtils.ts: isTextTool() 헬퍼, drawText() 함수 (ctx.fillText로 멀티라인 지원), drawStroke()에서 텍스트 위임
+- useDrawing.ts: textInput/fontSize 상태, handleMouseDown에서 텍스트 도구 분기, commitText/cancelText 함수
+- TextInput.tsx: 캔버스 위 absolute 포지션 textarea (Enter로 확정, Shift+Enter 줄바꿈, Esc 취소, blur 시 자동 확정)
+- Canvas.tsx: TextInput 조건부 렌더링 (canvas-container 내 오버레이)
+- Toolbar.tsx: Text 버튼 추가 (도형 도구 뒤 separator 후), 텍스트 도구 선택 시 Width→Font Size (12-72px) 전환
+- App.tsx: fontSize/textInput/commitText/cancelText props 전달
+- 서버 변경 불필요 (텍스트도 DrawStroke로 표현)
+- Undo/Redo 자동 지원 (기존 로직 그대로)
 
 ## 미래 아이디어 (선택)
 

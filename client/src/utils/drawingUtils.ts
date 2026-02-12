@@ -8,6 +8,34 @@ export function isShapeTool(tool: DrawingTool): boolean {
 }
 
 /**
+ * Check if a tool is the text tool
+ */
+export function isTextTool(tool: DrawingTool): boolean {
+  return tool === 'text';
+}
+
+/**
+ * Draw text on canvas
+ */
+export function drawText(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  text: string,
+  color: string,
+  fontSize: number,
+): void {
+  ctx.fillStyle = color;
+  ctx.font = `${fontSize}px sans-serif`;
+  ctx.textBaseline = 'top';
+
+  const lines = text.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], x, y + i * fontSize * 1.2);
+  }
+}
+
+/**
  * Draw a shape between two points
  */
 export function drawShape(
@@ -85,6 +113,19 @@ export function drawStroke(
   stroke: DrawStroke,
 ): void {
   if (stroke.points.length === 0) return;
+
+  // Text tool: delegate to drawText
+  if (isTextTool(stroke.tool) && stroke.text) {
+    drawText(
+      ctx,
+      stroke.points[0].x,
+      stroke.points[0].y,
+      stroke.text,
+      stroke.color,
+      stroke.fontSize ?? 24,
+    );
+    return;
+  }
 
   // Shape tools: delegate to drawShape (uses first and last points)
   if (isShapeTool(stroke.tool) && stroke.points.length >= 2) {
