@@ -35,12 +35,17 @@ function App() {
     tool,
     color,
     width,
+    fontSize,
+    textInput,
     userId,
     canUndo,
     canRedo,
     setTool,
     setColor,
     setWidth,
+    setFontSize,
+    commitText,
+    cancelText,
     handleClear,
     handleUndo,
     handleRedo,
@@ -191,11 +196,13 @@ function App() {
         tool={tool}
         color={color}
         width={width}
+        fontSize={fontSize}
         canUndo={canUndo}
         canRedo={canRedo}
         onToolChange={setTool}
         onColorChange={setColor}
         onWidthChange={setWidth}
+        onFontSizeChange={setFontSize}
         onClear={handleClear}
         onUndo={handleUndo}
         onRedo={handleRedo}
@@ -207,6 +214,11 @@ function App() {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseLeave}
+        textInput={textInput}
+        textColor={color}
+        textFontSize={fontSize}
+        onCommitText={commitText}
+        onCancelText={cancelText}
       />
     </div>
   );

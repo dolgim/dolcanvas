@@ -16,10 +16,16 @@ import {
   drawShape,
   drawStroke,
   isShapeTool,
+  isTextTool,
   redrawAllStrokes,
 } from '../utils/drawingUtils';
 
 const USER_ID = generateUserId();
+
+export interface TextInputState {
+  position: { x: number; y: number };
+  strokeId: string;
+}
 
 interface UseDrawingOptions {
   canvasRef: RefObject<HTMLCanvasElement | null>;
@@ -32,6 +38,8 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
   const [color, setColor] = useState('#000000');
   const [width, setWidth] = useState(2);
   const [tool, setTool] = useState<DrawingTool>('pen');
+  const [fontSize, setFontSize] = useState(24);
+  const [textInput, setTextInput] = useState<TextInputState | null>(null);
 
   const isDrawingRef = useRef(false);
   const currentStrokeRef = useRef<DrawStroke | null>(null);
@@ -62,6 +70,15 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
       const point = getCanvasPoint(e.clientX, e.clientY);
       if (!point) return;
+
+      // Text tool: open text input instead of drawing
+      if (isTextTool(tool)) {
+        setTextInput({
+          position: { x: point.x, y: point.y },
+          strokeId: generateStrokeId(),
+        });
+        return;
+      }
 
       isDrawingRef.current = true;
       currentStrokeRef.current = {
@@ -282,6 +299,53 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
     currentStrokeRef.current = null;
   }, [canvasRef, sendMessage]);
 
+  const commitText = useCallback(
+    (text: string) => {
+      if (!textInput || !text.trim()) {
+        setTextInput(null);
+        return;
+      }
+
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext('2d');
+
+      const textStroke: DrawStroke = {
+        id: textInput.strokeId,
+        points: [{ x: textInput.position.x, y: textInput.position.y, timestamp: Date.now() }],
+        color,
+        width,
+        tool: 'text',
+        userId: USER_ID,
+        text,
+        fontSize,
+      };
+
+      // Draw on canvas
+      if (ctx) {
+        drawStroke(ctx, textStroke);
+      }
+
+      setStrokes((prev) => [...prev, textStroke]);
+      setRedoStack([]);
+      setTextInput(null);
+
+      // Send to server
+      if (sendMessage) {
+        const message: WSMessage<DrawMessagePayload> = {
+          type: 'draw',
+          payload: { stroke: textStroke },
+          timestamp: Date.now(),
+        };
+        sendMessage(message);
+      }
+    },
+    [canvasRef, textInput, color, width, fontSize, sendMessage],
+  );
+
+  const cancelText = useCallback(() => {
+    setTextInput(null);
+  }, []);
+
   const handleClear = useCallback(() => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
@@ -435,12 +499,17 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
     color,
     width,
     tool,
+    fontSize,
+    textInput,
     userId: USER_ID,
     canUndo,
     canRedo,
     setColor,
     setWidth,
     setTool,
+    setFontSize,
+    commitText,
+    cancelText,
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,

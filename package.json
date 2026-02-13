@@ -2,6 +2,7 @@
   "name": "dolcanvas",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "AI 에이전트 활용 검증용 실시간 공유 그림판",
   "scripts": {
     "dev": "pnpm --parallel --stream -r dev",
@@ -19,9 +20,9 @@
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.39.2",
-    "eslint": "^9.18.0",
+    "eslint": "^9.39.2",
     "prettier": "^3.4.2",
-    "typescript": "^5.7.2",
+    "typescript": "~5.9.3",
     "typescript-eslint": "^8.54.0"
   }
 }

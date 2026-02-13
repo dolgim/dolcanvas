@@ -2,16 +2,11 @@
 
 ## 현재 상태
 
-Phase 3 진행 중, 다음 작업: 텍스트 추가
+Phase 3 완료
 
 ## 다음 작업 (우선순위 순)
 
-1. 텍스트 추가
-3. 의존성 정리
-   - ESLint 버전 통일 (루트 `^9.18.0` vs client `^9.39.1`)
-   - `typescript-eslint` 버전 통일 (루트 `^8.54.0` vs client `^8.46.4`)
-   - 루트 `package.json`에 `"type": "module"` 추가 검토 (ESM 경고 제거)
-   - 전반적인 devDependencies 정리
+1. ~~의존성 정리~~ ✅ (완료)
 
 ## 완료된 작업
 
@@ -76,12 +71,12 @@ pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
 ```
 자세한 테스트 시나리오는 `TESTING.md` 참조.
 
-### Phase 3: 추가 기능 (진행 중)
+### Phase 3: 추가 기능 ✅
 
 - [x] 지우개 도구
 - [x] Undo/Redo
 - [x] 도형 도구 (사각형, 원, 선)
-- [ ] 텍스트 추가
+- [x] 텍스트 추가
 - [x] 사용자 커서 표시
 
 **구현 내역 (지우개)**:
@@ -107,6 +102,17 @@ pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
 - 제로 사이즈 도형 무시, 드래그 중 원격 스트로크 도착 시 redrawAllStrokes 폴백
 - 서버 변경 불필요 (도형도 2포인트 stroke로 표현)
 
+**구현 내역 (텍스트 도구)**:
+- shared/types.ts: DrawingTool에 'text' 추가, DrawStroke에 text?/fontSize? 필드 추가
+- drawingUtils.ts: isTextTool() 헬퍼, drawText() 함수 (ctx.fillText로 멀티라인 지원), drawStroke()에서 텍스트 위임
+- useDrawing.ts: textInput/fontSize 상태, handleMouseDown에서 텍스트 도구 분기, commitText/cancelText 함수
+- TextInput.tsx: 캔버스 위 absolute 포지션 textarea (Enter로 확정, Shift+Enter 줄바꿈, Esc 취소, blur 시 자동 확정)
+- Canvas.tsx: TextInput 조건부 렌더링 (canvas-container 내 오버레이)
+- Toolbar.tsx: Text 버튼 추가 (도형 도구 뒤 separator 후), 텍스트 도구 선택 시 Width→Font Size (12-72px) 전환
+- App.tsx: fontSize/textInput/commitText/cancelText props 전달
+- 서버 변경 불필요 (텍스트도 DrawStroke로 표현)
+- Undo/Redo 자동 지원 (기존 로직 그대로)
+
 **구현 내역 (사용자 커서 표시)**:
 - shared/types.ts: MessageType에 'cursor' 추가, CursorMessagePayload/UserInfo 인터페이스, SyncMessagePayload에 users 필드, JoinMessagePayload에 colorIndex 필드
 - server/index.ts: 사용자 추적 Map (WebSocket → UserInfo), 8가지 색상 순환 배정, join 시 sync에 users 포함 + join broadcast, cursor 릴레이, close 시 leave broadcast
@@ -128,4 +134,4 @@ pnpm dev  # 브라우저 2개 이상 창에서 http://localhost:5174 접속
 - 고DPI 스케일링
 
 ---
-**마지막 업데이트**: 2026-02-12
+**마지막 업데이트**: 2026-02-13
