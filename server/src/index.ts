@@ -8,6 +8,8 @@ import type {
   SyncMessagePayload,
   UndoMessagePayload,
   RedoMessagePayload,
+  LeaveMessagePayload,
+  UserInfo,
 } from '@dolcanvas/shared';
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8080;
@@ -16,6 +18,10 @@ const wss = new WebSocketServer({ port: PORT });
 
 // Global stroke history
 const strokes: DrawStroke[] = [];
+
+// Connected user tracking
+const users = new Map<WebSocket, UserInfo>();
+let nextColorIndex = 0;
 
 console.log(`WebSocket server is running on ws://localhost:${PORT}`);
 
@@ -41,15 +47,37 @@ wss.on('connection', (ws) => {
       switch (message.type) {
         case 'join': {
           const payload = message.payload as JoinMessagePayload;
-          console.log(`User ${payload.userId} joined`);
+          const colorIndex = nextColorIndex % 8;
+          nextColorIndex++;
 
-          // Send current state to the new client
+          // Register user
+          const userInfo: UserInfo = { userId: payload.userId, colorIndex };
+          users.set(ws, userInfo);
+
+          console.log(`User ${payload.userId} joined (color: ${colorIndex})`);
+
+          // Send current state + existing users to the new client
+          const otherUsers: UserInfo[] = [];
+          users.forEach((info, client) => {
+            if (client !== ws) {
+              otherUsers.push(info);
+            }
+          });
+
           const syncMessage: WSMessage<SyncMessagePayload> = {
             type: 'sync',
-            payload: { strokes },
+            payload: { strokes, users: otherUsers },
             timestamp: Date.now(),
           };
           ws.send(JSON.stringify(syncMessage));
+
+          // Broadcast join to other clients (with colorIndex)
+          const joinBroadcast: WSMessage<JoinMessagePayload> = {
+            type: 'join',
+            payload: { userId: payload.userId, colorIndex },
+            timestamp: Date.now(),
+          };
+          broadcast(JSON.stringify(joinBroadcast), ws);
           break;
         }
 
@@ -102,6 +130,12 @@ wss.on('connection', (ws) => {
           break;
         }
 
+        case 'cursor': {
+          // Relay cursor position to other clients (no storage needed)
+          broadcast(rawMessage.toString(), ws);
+          break;
+        }
+
         default:
           console.warn(`Unknown message type: ${message.type}`);
       }
@@ -111,7 +145,22 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
-    console.log('Client disconnected');
+    const userInfo = users.get(ws);
+    if (userInfo) {
+      console.log(`User ${userInfo.userId} disconnected`);
+
+      // Broadcast leave message
+      const leaveMessage: WSMessage<LeaveMessagePayload> = {
+        type: 'leave',
+        payload: { userId: userInfo.userId },
+        timestamp: Date.now(),
+      };
+      broadcast(JSON.stringify(leaveMessage));
+
+      users.delete(ws);
+    } else {
+      console.log('Client disconnected');
+    }
   });
 
   ws.on('error', (error) => {

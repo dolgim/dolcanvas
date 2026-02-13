@@ -36,7 +36,8 @@ export type MessageType =
   | 'leave'
   | 'sync'
   | 'undo'
-  | 'redo';
+  | 'redo'
+  | 'cursor';
 
 /**
  * WebSocket 메시지 기본 구조
@@ -62,10 +63,19 @@ export interface ClearMessagePayload {
 }
 
 /**
+ * 사용자 정보 (커서 색상 배정)
+ */
+export interface UserInfo {
+  userId: string;
+  colorIndex: number;
+}
+
+/**
  * 사용자 입장 메시지 페이로드
  */
 export interface JoinMessagePayload {
   userId: string;
+  colorIndex?: number;
 }
 
 /**
@@ -80,6 +90,7 @@ export interface LeaveMessagePayload {
  */
 export interface SyncMessagePayload {
   strokes: DrawStroke[];
+  users?: UserInfo[];
 }
 
 /**
@@ -96,4 +107,13 @@ export interface UndoMessagePayload {
 export interface RedoMessagePayload {
   userId: string;
   stroke: DrawStroke;
+}
+
+/**
+ * 커서 위치 메시지 페이로드
+ */
+export interface CursorMessagePayload {
+  userId: string;
+  x: number;
+  y: number;
 }

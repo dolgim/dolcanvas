@@ -6,11 +6,14 @@ import type {
   SyncMessagePayload,
   UndoMessagePayload,
   RedoMessagePayload,
+  CursorMessagePayload,
+  LeaveMessagePayload,
 } from '@dolcanvas/shared';
 import { Canvas } from './components/Canvas';
 import { Toolbar } from './components/Toolbar';
 import { useDrawing } from './hooks/useDrawing';
 import { useWebSocket } from './hooks/useWebSocket';
+import { useCursors } from './hooks/useCursors';
 import './App.css';
 
 const WS_URL = 'ws://localhost:8080';
@@ -47,9 +50,9 @@ function App() {
     handleUndo,
     handleRedo,
     handleMouseDown,
-    handleMouseMove,
+    handleMouseMove: handleDrawingMouseMove,
     handleMouseUp,
-    handleMouseLeave,
+    handleMouseLeave: handleDrawingMouseLeave,
     handleRemoteStroke,
     handleRemoteClear,
     handleRemoteUndo,
@@ -58,6 +61,36 @@ function App() {
     canvasRef,
     sendMessage,
   });
+
+  // Cursor tracking
+  const {
+    remoteCursors,
+    handleLocalCursorMove,
+    handleLocalCursorLeave,
+    handleRemoteCursor,
+    handleUserJoin,
+    handleUserLeave,
+    handleUsersSync,
+  } = useCursors({ userId, sendMessage });
+
+  // Wrap mouse move to include cursor sending
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      handleDrawingMouseMove(e);
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      handleLocalCursorMove(e.clientX - rect.left, e.clientY - rect.top);
+    },
+    [handleDrawingMouseMove, handleLocalCursorMove, canvasRef],
+  );
+
+  // Wrap mouse leave to include cursor hide signal
+  const handleMouseLeave = useCallback(() => {
+    handleDrawingMouseLeave();
+    handleLocalCursorLeave();
+  }, [handleDrawingMouseLeave, handleLocalCursorLeave]);
 
   // Route incoming WebSocket messages
   const handleMessage = useCallback(
@@ -75,6 +108,9 @@ function App() {
         case 'sync': {
           const payload = message.payload as SyncMessagePayload;
           handleSync(payload.strokes);
+          if (payload.users) {
+            handleUsersSync(payload.users);
+          }
           break;
         }
         case 'undo': {
@@ -87,11 +123,37 @@ function App() {
           handleRemoteStroke(payload.stroke);
           break;
         }
+        case 'cursor': {
+          const payload = message.payload as CursorMessagePayload;
+          handleRemoteCursor(payload);
+          break;
+        }
+        case 'join': {
+          const payload = message.payload as JoinMessagePayload;
+          if (payload.colorIndex !== undefined) {
+            handleUserJoin(payload.userId, payload.colorIndex);
+          }
+          break;
+        }
+        case 'leave': {
+          const payload = message.payload as LeaveMessagePayload;
+          handleUserLeave(payload.userId);
+          break;
+        }
         default:
           console.warn(`Unknown message type: ${message.type}`);
       }
     },
-    [handleRemoteStroke, handleRemoteClear, handleRemoteUndo, handleSync],
+    [
+      handleRemoteStroke,
+      handleRemoteClear,
+      handleRemoteUndo,
+      handleSync,
+      handleRemoteCursor,
+      handleUserJoin,
+      handleUserLeave,
+      handleUsersSync,
+    ],
   );
 
   // Update message handler ref
@@ -147,6 +209,7 @@ function App() {
       />
       <Canvas
         canvasRef={canvasRef}
+        cursors={remoteCursors}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
