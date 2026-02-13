@@ -16,9 +16,13 @@ export function TextInput({
   onCancel,
 }: TextInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
   useEffect(() => {
-    textareaRef.current?.focus();
+    // Delay focus to after click event processing completes.
+    // Without this, the mouseup/click on canvas steals focus from the textarea.
+    const timer = setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
