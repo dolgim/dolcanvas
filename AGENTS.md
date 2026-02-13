@@ -67,7 +67,8 @@ git worktree add ../dolcanvas-<브랜치명> -b <브랜치명>
 cd ../dolcanvas-<브랜치명>
 pnpm install
 
-# 3. 작업 완료 후 worktree 정리
+# 3. 작업 완료 후 메인 디렉토리로 복귀 및 worktree 정리
+cd ../dolcanvas
 git worktree remove ../dolcanvas-<브랜치명>
 ```
 
