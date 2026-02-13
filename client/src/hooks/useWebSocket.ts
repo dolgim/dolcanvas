@@ -4,18 +4,24 @@ import type { WSMessage } from '@dolcanvas/shared';
 interface UseWebSocketOptions {
   url: string;
   onMessage: (message: WSMessage) => void;
+  onConnect?: () => void;
 }
 
-export function useWebSocket({ url, onMessage }: UseWebSocketOptions) {
+export function useWebSocket({ url, onMessage, onConnect }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const onMessageRef = useRef(onMessage);
+  const onConnectRef = useRef(onConnect);
   const connectRef = useRef<(() => void) | undefined>(undefined);
 
-  // Keep onMessage callback up to date
+  // Keep callbacks up to date
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
+
+  useEffect(() => {
+    onConnectRef.current = onConnect;
+  }, [onConnect]);
 
   const connect = useCallback(() => {
     try {
@@ -24,6 +30,7 @@ export function useWebSocket({ url, onMessage }: UseWebSocketOptions) {
 
       ws.onopen = () => {
         console.log('WebSocket connected');
+        onConnectRef.current?.();
       };
 
       ws.onmessage = (event) => {

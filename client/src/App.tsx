@@ -24,10 +24,14 @@ function App() {
   // Message handler ref (to avoid circular dependency)
   const messageHandlerRef = useRef<(message: WSMessage) => void>(() => {});
 
+  // Join message sender ref (set after useDrawing initializes userId)
+  const joinSenderRef = useRef<() => void>(() => {});
+
   // WebSocket connection
   const { sendMessage } = useWebSocket({
     url: WS_URL,
     onMessage: (message) => messageHandlerRef.current(message),
+    onConnect: () => joinSenderRef.current(),
   });
 
   // Drawing logic with WebSocket integration
@@ -161,14 +165,16 @@ function App() {
     messageHandlerRef.current = handleMessage;
   }, [handleMessage]);
 
-  // Send join message on mount
+  // Send join message when WebSocket connects (and on reconnect)
   useEffect(() => {
-    const joinMessage: WSMessage<JoinMessagePayload> = {
-      type: 'join',
-      payload: { userId },
-      timestamp: Date.now(),
+    joinSenderRef.current = () => {
+      const joinMessage: WSMessage<JoinMessagePayload> = {
+        type: 'join',
+        payload: { userId },
+        timestamp: Date.now(),
+      };
+      sendMessage(joinMessage);
     };
-    sendMessage(joinMessage);
   }, [userId, sendMessage]);
 
   // Keyboard shortcuts for undo/redo
