@@ -34,10 +34,8 @@ pnpm format
 git checkout main
 git pull origin main
 
-# 2. 기능 브랜치 생성 (네이밍: feature/기능명 또는 phase3/기능명)
+# 2. 기능 브랜치 생성 (네이밍: feature/기능명)
 git checkout -b feature/undo-redo
-# 또는
-git checkout -b phase3/shape-tools
 
 # 3. 작업 진행 및 커밋
 git add <files>
@@ -78,7 +76,6 @@ git worktree remove ../dolcanvas-<브랜치명>
 
 ### 브랜치 네이밍 컨벤션
 - `feature/<기능명>`: 새로운 기능 추가
-- `phase3/<기능명>`: Phase 3 관련 기능
 - `fix/<버그명>`: 버그 수정
 - `refactor/<내용>`: 리팩토링
 - `docs/<내용>`: 문서 업데이트
@@ -107,7 +104,8 @@ git worktree remove ../dolcanvas-<브랜치명>
 - 한 번에 하나의 기능씩 구현하고, 동작 확인 후 다음으로 넘어간다
 - `shared/src/types.ts`의 타입을 사용하여 타입 안정성을 유지한다
 - 구현 후 테스트/확인 방법을 안내한다
-- 작업 완료 시 Linear 이슈 상태를 업데이트한다
+- 작업 시작 시 Linear 이슈 상태를 **In Progress**로 변경한다
+- 작업 완료 시 PR을 생성하고, Linear 상태를 **In Review**로 변경한다
 - 사용자가 후속 작업을 지시하면 Linear에 새 이슈를 생성한다
 - 기존 코드의 패턴과 컨벤션을 따른다
 - PR 생성 시 테스트 결과와 스크린샷(필요 시)을 포함한다
