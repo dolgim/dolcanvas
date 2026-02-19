@@ -15,6 +15,42 @@ export function isTextTool(tool: DrawingTool): boolean {
 }
 
 /**
+ * Constrain end point for shape tools when Shift is held.
+ * - Rectangle/Circle + Shift → square bounding box (preserves direction)
+ * - Line + Shift → 45° angle snap (preserves distance)
+ */
+export function constrainEndPoint(
+  start: DrawPoint,
+  end: DrawPoint,
+  tool: DrawingTool,
+  shiftKey: boolean,
+): DrawPoint {
+  if (!shiftKey || !isShapeTool(tool)) return end;
+
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+
+  if (tool === 'line') {
+    const angle = Math.atan2(dy, dx);
+    const snapped = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    return {
+      x: start.x + distance * Math.cos(snapped),
+      y: start.y + distance * Math.sin(snapped),
+      timestamp: end.timestamp,
+    };
+  }
+
+  // Rectangle/Circle: constrain to square bounding box
+  const size = Math.max(Math.abs(dx), Math.abs(dy));
+  return {
+    x: start.x + (dx >= 0 ? size : -size),
+    y: start.y + (dy >= 0 ? size : -size),
+    timestamp: end.timestamp,
+  };
+}
+
+/**
  * Draw text on canvas
  */
 export function drawText(
