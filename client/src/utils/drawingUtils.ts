@@ -174,7 +174,11 @@ export function redrawAllStrokes(
   width: number,
   height: number,
 ): void {
-  // Clear canvas
+  // Ensure correct HiDPI transform (defensive reset)
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // Clear canvas (logical coordinates, scaled by transform)
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, width, height);
 

@@ -42,12 +42,20 @@ export function Canvas({
       if (!parent) return;
 
       const { width, height } = parent.getBoundingClientRect();
-      canvas.width = width;
-      canvas.height = height;
+      const dpr = window.devicePixelRatio || 1;
 
-      // Fill with white background
+      // Physical bitmap size (HiDPI)
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+
+      // CSS display size (logical)
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+
+      // Scale context so all drawing uses logical coordinates
       const ctx = canvas.getContext('2d');
       if (ctx) {
+        ctx.scale(dpr, dpr);
         ctx.fillStyle = 'white';
         ctx.fillRect(0, 0, width, height);
       }
