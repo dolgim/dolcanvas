@@ -189,9 +189,10 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
       // If remote strokes arrived during drag, do full redraw
       if (canvas && ctx && strokesChangedDuringDragRef.current) {
+        const rect = canvas.getBoundingClientRect();
         setStrokes((prev) => {
           const newStrokes = [...prev, finishedStroke];
-          redrawAllStrokes(ctx, newStrokes, canvas.width, canvas.height);
+          redrawAllStrokes(ctx, newStrokes, rect.width, rect.height);
           return newStrokes;
         });
       } else {
@@ -261,9 +262,10 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
       finishedStroke.points = [start, end];
 
       if (canvas && ctx && strokesChangedDuringDragRef.current) {
+        const rect = canvas.getBoundingClientRect();
         setStrokes((prev) => {
           const newStrokes = [...prev, finishedStroke];
-          redrawAllStrokes(ctx, newStrokes, canvas.width, canvas.height);
+          redrawAllStrokes(ctx, newStrokes, rect.width, rect.height);
           return newStrokes;
         });
       } else {
@@ -353,7 +355,8 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
     setStrokes([]);
     setRedoStack([]);
-    redrawAllStrokes(ctx, [], canvas.width, canvas.height);
+    const rect = canvas.getBoundingClientRect();
+    redrawAllStrokes(ctx, [], rect.width, rect.height);
 
     // Send to server
     if (sendMessage) {
@@ -399,7 +402,8 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
     setStrokes([]);
     setRedoStack([]);
-    redrawAllStrokes(ctx, [], canvas.width, canvas.height);
+    const rect = canvas.getBoundingClientRect();
+    redrawAllStrokes(ctx, [], rect.width, rect.height);
   }, [canvasRef]);
 
   // Handle sync message (initial state from server)
@@ -411,7 +415,8 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
       setStrokes(syncStrokes);
       setRedoStack([]);
-      redrawAllStrokes(ctx, syncStrokes, canvas.width, canvas.height);
+      const rect = canvas.getBoundingClientRect();
+      redrawAllStrokes(ctx, syncStrokes, rect.width, rect.height);
     },
     [canvasRef],
   );
@@ -437,7 +442,8 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
 
     setStrokes(newStrokes);
     setRedoStack((prev) => [...prev, undoneStroke]);
-    redrawAllStrokes(ctx, newStrokes, canvas.width, canvas.height);
+    const rect = canvas.getBoundingClientRect();
+    redrawAllStrokes(ctx, newStrokes, rect.width, rect.height);
 
     // Send to server
     if (sendMessage) {
@@ -481,9 +487,10 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
       const ctx = canvas?.getContext('2d');
       if (!canvas || !ctx) return;
 
+      const rect = canvas.getBoundingClientRect();
       setStrokes((prev) => {
         const newStrokes = prev.filter((s) => s.id !== strokeId);
-        redrawAllStrokes(ctx, newStrokes, canvas.width, canvas.height);
+        redrawAllStrokes(ctx, newStrokes, rect.width, rect.height);
         return newStrokes;
       });
     },
