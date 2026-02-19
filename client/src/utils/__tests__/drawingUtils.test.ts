@@ -1,6 +1,7 @@
 import type { DrawPoint, DrawStroke, DrawingTool } from '@dolcanvas/shared';
 import { describe, expect, it } from 'vitest';
 import {
+  constrainEndPoint,
   drawLineSegment,
   drawShape,
   drawStroke,
@@ -248,5 +249,101 @@ describe('redrawAllStrokes', () => {
 
     expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, 800, 600);
     expect(ctx.beginPath).not.toHaveBeenCalled();
+  });
+});
+
+describe('constrainEndPoint', () => {
+  it('should return end as-is when shiftKey is false', () => {
+    const start = point(0, 0);
+    const end = point(100, 50);
+    const result = constrainEndPoint(start, end, 'rectangle', false);
+    expect(result).toBe(end);
+  });
+
+  it('should return end as-is for non-shape tools even with shiftKey', () => {
+    const start = point(0, 0);
+    const end = point(100, 50);
+
+    expect(constrainEndPoint(start, end, 'pen', true)).toBe(end);
+    expect(constrainEndPoint(start, end, 'eraser', true)).toBe(end);
+    expect(constrainEndPoint(start, end, 'text', true)).toBe(end);
+  });
+
+  describe('rectangle + shift', () => {
+    it('should constrain to square using larger dimension (width > height)', () => {
+      const start = point(10, 10);
+      const end = point(110, 60); // dx=100, dy=50 → size=100
+      const result = constrainEndPoint(start, end, 'rectangle', true);
+      expect(result.x).toBe(110);
+      expect(result.y).toBe(110);
+    });
+
+    it('should constrain to square using larger dimension (height > width)', () => {
+      const start = point(10, 10);
+      const end = point(60, 110); // dx=50, dy=100 → size=100
+      const result = constrainEndPoint(start, end, 'rectangle', true);
+      expect(result.x).toBe(110);
+      expect(result.y).toBe(110);
+    });
+
+    it('should preserve negative direction', () => {
+      const start = point(100, 100);
+      const end = point(30, 60); // dx=-70, dy=-40 → size=70
+      const result = constrainEndPoint(start, end, 'rectangle', true);
+      expect(result.x).toBe(30);  // 100 + (-70)
+      expect(result.y).toBe(30);  // 100 + (-70)
+    });
+  });
+
+  describe('circle + shift', () => {
+    it('should constrain to square bounding box (same as rectangle)', () => {
+      const start = point(0, 0);
+      const end = point(80, 50); // dx=80, dy=50 → size=80
+      const result = constrainEndPoint(start, end, 'circle', true);
+      expect(result.x).toBe(80);
+      expect(result.y).toBe(80);
+    });
+  });
+
+  describe('line + shift', () => {
+    it('should snap to 0° (horizontal) for near-horizontal angle', () => {
+      const start = point(0, 0);
+      const end = point(100, 10); // angle ≈ 5.7°
+      const result = constrainEndPoint(start, end, 'line', true);
+      const distance = Math.sqrt(100 * 100 + 10 * 10);
+      expect(result.x).toBeCloseTo(distance); // cos(0) * distance
+      expect(result.y).toBeCloseTo(0);         // sin(0) * distance
+    });
+
+    it('should snap to 90° (vertical) for near-vertical angle', () => {
+      const start = point(0, 0);
+      const end = point(10, 100); // angle ≈ 84.3°
+      const result = constrainEndPoint(start, end, 'line', true);
+      const distance = Math.sqrt(10 * 10 + 100 * 100);
+      expect(result.x).toBeCloseTo(0);
+      expect(result.y).toBeCloseTo(distance);
+    });
+
+    it('should snap to 45° for diagonal angle', () => {
+      const start = point(0, 0);
+      const end = point(80, 70); // angle ≈ 41.2°
+      const result = constrainEndPoint(start, end, 'line', true);
+      const distance = Math.sqrt(80 * 80 + 70 * 70);
+      const cos45 = Math.cos(Math.PI / 4);
+      expect(result.x).toBeCloseTo(distance * cos45);
+      expect(result.y).toBeCloseTo(distance * cos45);
+    });
+
+    it('should preserve distance after snapping', () => {
+      const start = point(50, 50);
+      const end = point(130, 55);
+      const dx = 80, dy = 5;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const result = constrainEndPoint(start, end, 'line', true);
+      const resultDist = Math.sqrt(
+        (result.x - 50) ** 2 + (result.y - 50) ** 2,
+      );
+      expect(resultDist).toBeCloseTo(distance);
+    });
   });
 });

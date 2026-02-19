@@ -12,6 +12,7 @@ import type {
 } from '@dolcanvas/shared';
 import { generateStrokeId, generateUserId } from '../utils/idGenerator';
 import {
+  constrainEndPoint,
   drawLineSegment,
   drawShape,
   drawStroke,
@@ -128,16 +129,24 @@ export function useDrawing({ canvasRef, sendMessage }: UseDrawingOptions) {
           ctx.putImageData(canvasSnapshotRef.current, 0, 0);
         }
         if (shapeStartPointRef.current) {
+          const constrained = constrainEndPoint(
+            shapeStartPointRef.current,
+            point,
+            stroke.tool,
+            e.shiftKey,
+          );
           drawShape(
             ctx,
             shapeStartPointRef.current,
-            point,
+            constrained,
             stroke.color,
             stroke.width,
             stroke.tool,
           );
+          lastPointRef.current = constrained;
+        } else {
+          lastPointRef.current = point;
         }
-        lastPointRef.current = point;
       } else {
         // Pen/eraser: additive rendering
         const lastPoint = stroke.points[stroke.points.length - 1];
