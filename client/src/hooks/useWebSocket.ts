@@ -34,6 +34,9 @@ export function useWebSocket({ url, onMessage, onConnect }: UseWebSocketOptions)
       };
 
       ws.onmessage = (event) => {
+        // Ignore messages from a stale connection (React strict mode)
+        if (wsRef.current !== ws) return;
+
         try {
           const message = JSON.parse(event.data) as WSMessage;
           onMessageRef.current(message);
@@ -43,6 +46,10 @@ export function useWebSocket({ url, onMessage, onConnect }: UseWebSocketOptions)
       };
 
       ws.onclose = () => {
+        // Only reconnect if this is still the active connection.
+        // React strict mode may close a stale WS after a newer one was created.
+        if (wsRef.current !== ws) return;
+
         console.log('WebSocket disconnected, reconnecting in 3s...');
         wsRef.current = null;
 
