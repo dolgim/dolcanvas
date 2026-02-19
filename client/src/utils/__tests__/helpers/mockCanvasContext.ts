@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 export function createMockContext(): CanvasRenderingContext2D {
   const ctx = {
     // Drawing methods

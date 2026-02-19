@@ -1,4 +1,5 @@
 import type { DrawPoint, DrawStroke, DrawingTool } from '@dolcanvas/shared';
+import { describe, expect, it } from 'vitest';
 import {
   drawLineSegment,
   drawShape,

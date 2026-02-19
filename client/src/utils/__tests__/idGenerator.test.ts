@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { generateStrokeId, generateUserId } from '../idGenerator';
 
 const UUID_REGEX =
